@@ -1,7 +1,7 @@
 package scripting;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,14 +14,18 @@ import java.util.stream.Collectors;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
 import org.controlsfx.dialog.Dialogs;
 
 public class Scripting {
 	
+	private String prelude;
 	private ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 	private HashMap<String, String> scriptFiles = new HashMap<>();
+	
+	public Scripting() {
+		prelude = readPrelude();
+	}
 	
 	private ArrayList<Path> getScripts() {
 
@@ -65,8 +69,10 @@ public class Scripting {
 		if (scriptFiles.containsKey(scriptName)) {
 			System.out.println("Scripting: running " + scriptName);
 			try {
-				engine.eval(new FileReader(scriptFiles.get(scriptName)));
-			} catch (FileNotFoundException | ScriptException e) {
+				String script = prelude + readFile(scriptFiles.get(scriptName));
+				engine.eval(script);
+				System.out.println("Scripting: finished running " + scriptName);
+			} catch (Exception e) {
 				System.out.println("Scripting: " + scriptName + " failed");
 				e.printStackTrace();
 			}
@@ -76,9 +82,42 @@ public class Scripting {
 		}
 	}
 	
-	public static void main(String[] args) {
-		Scripting s = new Scripting();
-		s.getScriptNames();
-		s.run("test");
+	private String readFile(String path) throws IOException {
+		File file = new File(path);
+		BufferedReader reader;
+		StringBuilder sb = new StringBuilder();
+		reader = new BufferedReader(new FileReader(file));
+	    String line;
+	    while ((line = reader.readLine()) != null) {
+	    	sb.append(line);
+	    	sb.append("\n");
+	    }
+	    reader.close();
+	    return sb.toString();
+	}
+	
+	private String readPrelude() {
+		ClassLoader classLoader = Scripting.class.getClassLoader();
+		File file = new File(classLoader.getResource("scripting/Prelude.js").getFile());
+		BufferedReader reader;
+		StringBuilder sb = new StringBuilder();
+		try {
+			reader = new BufferedReader(new FileReader(file));
+		    String line;
+		    while ((line = reader.readLine()) != null) {
+		    	sb.append(line);
+		    	sb.append("\n");
+		    }
+		    reader.close();
+		    return sb.toString();
+		} catch (Exception e) {
+			System.out.println("Unable to read Prelude.js");
+			e.printStackTrace();
+		}
+        return "";
+	}
+	
+	public static void main(String[] args) throws IOException {
+		
 	}
 }
