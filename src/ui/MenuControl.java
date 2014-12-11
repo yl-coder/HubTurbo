@@ -12,7 +12,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
-import scripting.Scripting;
+import scripting.ScriptManager;
 import service.ServiceManager;
 import ui.issuecolumn.ColumnControl;
 import ui.sidepanel.SidePanel;
@@ -22,13 +22,13 @@ public class MenuControl extends MenuBar {
 	private final ColumnControl columns;
 	private final SidePanel sidePanel;
 	private final ScrollPane columnsScroll;
-	private final Scripting scripting;
+	private final ScriptManager scripting;
 
 	public MenuControl(ColumnControl columns, SidePanel sidePanel, ScrollPane columnsScroll) {
 		this.columns = columns;
 		this.sidePanel = sidePanel;
 		this.columnsScroll = columnsScroll;
-		this.scripting = new Scripting();
+		this.scripting = new ScriptManager();
 		createMenuItems();
 	}
 	
