@@ -83,8 +83,15 @@ public class ScriptManager {
 				String script = prelude + readFile(scriptFiles.get(scriptName));
 				
 				List<Issue> issues = model.getIssues().stream().map(issue -> new Issue(issue)).collect(Collectors.toList());
+				List<Milestone> milestones = model.getMilestones().stream().map(milestone -> new Milestone(milestone)).collect(Collectors.toList());
+				List<User> users = model.getCollaborators().stream().map(user -> new User(user)).collect(Collectors.toList());
+				List<Label> labels = model.getLabels().stream().map(label -> new Label(label)).collect(Collectors.toList());
 				
 				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("issues", issues);
+				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("milestones", milestones);
+				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("users", users);
+				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("labels", labels);
+
 				engine.eval(script);
 				System.out.println("Scripting: finished running " + scriptName);
 			} catch (Exception e) {
