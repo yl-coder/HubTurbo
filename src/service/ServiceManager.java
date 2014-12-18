@@ -12,6 +12,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import model.Model;
+import model.TurboIssue;
+import model.TurboLabel;
+import model.TurboMilestone;
+import model.TurboUser;
+import storage.DataCacheFileHandler;
+import storage.TurboRepoData;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +42,7 @@ import org.markdown4j.Markdown4jProcessor;
 import service.updateservice.CommentUpdateService;
 import service.updateservice.ModelUpdater;
 import stubs.ServiceManagerStub;
+import ui.StatusBar;
 
 /**
  * Singleton class that provides access to the GitHub API services required by HubTurbo
@@ -73,11 +80,20 @@ public class ServiceManager {
 	private ModelUpdater modelUpdater;
 	private Model model;
 	private IRepositoryIdProvider repoId;
+	private String issuesETag = null;
+	private String collabsETag = null;
+	private String labelsETag = null;
+	private String milestonesETag = null;
 	
 	public static final String STATE_ALL = "all";
 	public static final String STATE_OPEN = "open";
 	public static final String STATE_CLOSED = "closed";
-	
+
+	// Login state
+	private String password;
+	private String repoOwner;
+	private String repoName;
+
 	protected ServiceManager(){
 		githubClient = new GitHubClientExtended();
 		collabService = new CollaboratorService(githubClient);
@@ -110,7 +126,7 @@ public class ServiceManager {
 			stopModelUpdate();
 		}
 		if(repoId != null){
-			modelUpdater = new ModelUpdater(githubClient, model);
+			modelUpdater = new ModelUpdater(githubClient, model, issuesETag, collabsETag, labelsETag, milestonesETag);
 			modelUpdater.startModelUpdate();
 		}
 	}
@@ -137,6 +153,7 @@ public class ServiceManager {
 	}
 	
 	public boolean login(String userId, String password){
+		this.password = password;
 		githubClient.setCredentials(userId, password);
 		try {
 			GitHubRequest request = new GitHubRequest();
@@ -153,7 +170,15 @@ public class ServiceManager {
 		return githubClient.getUser();
 	}
 	
+	public String getPassword(){
+		assert password != null;
+		return password;
+	}
+
 	public boolean setupRepository(String owner, String name) throws IOException{
+		repoOwner = owner;
+		repoName = name;
+		StatusBar.displayMessage("Authenticating...");
 		repoId = RepositoryId.create(owner, name);
 		if(checkRepository(repoId)){
 			return model.loadComponents(repoId);
@@ -161,6 +186,14 @@ public class ServiceManager {
 			throw new IOException("Cannot access repository"); //TODO: create specific exception for this
 		}
 		
+	}
+	
+	public String getRepoOwner() {
+		return repoOwner;
+	}
+	
+	public String getRepoName() {
+		return repoName;
 	}
 	
 	public boolean checkRepository(String repo) throws IOException{
@@ -196,17 +229,52 @@ public class ServiceManager {
 	public HashMap<String, List> getGitHubResources(IRepositoryIdProvider repoId) throws IOException {
 		this.repoId = repoId;
 		model.setRepoId(repoId);
-		List<User> ghCollaborators = getCollaborators();
-		List<Label> ghLabels = getLabels();
-		List<Milestone> ghMilestones = getMilestones();
-		List<Issue> ghIssues = getAllIssues();
 		
-		HashMap<String, List> map = new HashMap<String, List>();
-		map.put(KEY_COLLABORATORS, ghCollaborators);
-		map.put(KEY_LABELS, ghLabels);
-		map.put(KEY_MILESTONES, ghMilestones);
-		map.put(KEY_ISSUES, ghIssues);
-		return map;
+		boolean needToGetResources = true;
+		String repoIdString = repoId.toString();
+
+		DataCacheFileHandler dcHandler = DataCacheFileHandler.getInstance();
+		TurboRepoData repo = dcHandler.getRepoGivenId(repoIdString);
+		if (repo != null) {
+			needToGetResources = false;
+		}
+
+		if (!needToGetResources) {
+			System.out.println("loading from cache...");
+			issuesETag = repo.getIssuesETag();
+			collabsETag = repo.getCollaboratorsETag();
+			labelsETag = repo.getLabelsETag();
+			milestonesETag = repo.getMilestonesETag();
+			List<TurboUser> collaborators = repo.getCollaborators();
+			List<TurboLabel> labels = repo.getLabels();
+			List<TurboMilestone> milestones = repo.getMilestones();
+			List<TurboIssue> issues = repo.getIssues(model);
+			
+			HashMap<String, List> map = new HashMap<String, List>();
+			map.put(KEY_COLLABORATORS, collaborators);
+			map.put(KEY_LABELS, labels);
+			map.put(KEY_MILESTONES, milestones);
+			map.put(KEY_ISSUES, issues);
+			return map;
+		} else {
+			// get resources
+			List<User> ghCollaborators = null;
+			List<Label> ghLabels = null;
+			List<Milestone> ghMilestones = null;
+			List<Issue> ghIssues = null;
+			
+			ghCollaborators = getCollaborators();
+			ghLabels = getLabels();
+			ghMilestones = getMilestones();
+			ghIssues = getAllIssues();
+			
+			HashMap<String, List> map = new HashMap<String, List>();
+			map.put(KEY_COLLABORATORS, ghCollaborators);
+			map.put(KEY_LABELS, ghLabels);
+			map.put(KEY_MILESTONES, ghMilestones);
+			map.put(KEY_ISSUES, ghIssues);
+			return map;
+		}
 	}
 	
 	/**
@@ -391,6 +459,27 @@ public class ServiceManager {
 		}
 	}
 	
+	/**
+	 * Gets events for a issue from GitHub, or returns
+	 * a cached version if already present.
+	 * @param issueId
+	 * @return
+	 * @throws IOException
+	 */
+	public ArrayList<TurboIssueEvent> getEvents(int issueId) throws IOException{
+		if(repoId != null){
+			return issueService.getIssueEvents(repoId, issueId).getTurboIssueEvents();
+		}
+		return new ArrayList<>();
+	}
+	
+	/**
+	 * Gets comments for a issue from GitHub, or returns
+	 * a cached version if already present.
+	 * @param issueId
+	 * @return
+	 * @throws IOException
+	 */
 	public List<Comment> getComments(int issueId) throws IOException{
 		if(repoId != null){
 			List<Comment> cached = model.getCommentsListForIssue(issueId);
@@ -403,7 +492,13 @@ public class ServiceManager {
 		return new ArrayList<Comment>();
 	}
 	
-	public List<Comment> getLatestComments(int issueId) throws IOException{
+	/**
+	 * Gets comments from an issue from GitHub and updates the cache.
+	 * @param issueId
+	 * @return
+	 * @throws IOException
+	 */
+	private List<Comment> getLatestComments(int issueId) throws IOException{
 		if(repoId != null){
 			List<Comment> comments = issueService.getComments(repoId, issueId);
 			List<Comment> list =  comments.stream()

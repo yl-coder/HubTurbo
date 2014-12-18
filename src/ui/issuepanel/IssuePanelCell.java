@@ -12,8 +12,11 @@ import javafx.stage.Stage;
 import model.Model;
 import model.TurboIssue;
 import ui.DragData;
+import ui.UI;
 import ui.issuecolumn.ColumnControl;
 import ui.sidepanel.SidePanel;
+import util.events.IssueSelectedEvent;
+
 import command.TurboIssueAddLabels;
 import command.TurboIssueSetAssignee;
 import command.TurboIssueSetMilestone;
@@ -23,16 +26,18 @@ public class IssuePanelCell extends ListCell<TurboIssue> {
 //	private final Stage mainStage;
 	private final Model model;
 	private final int parentColumnIndex;
-	private SidePanel sidePanel;
-	private ColumnControl parentColumnControl;
+	private final SidePanel sidePanel;
+	private final ColumnControl parentColumnControl;
+	private final UI ui;
 		
-	public IssuePanelCell(Stage mainStage, Model model, IssuePanel parent, int parentColumnIndex, SidePanel sidePanel, ColumnControl parentColumnControl) {
+	public IssuePanelCell(UI ui, Stage mainStage, Model model, IssuePanel parent, int parentColumnIndex, SidePanel sidePanel, ColumnControl parentColumnControl) {
 		super();
 //		this.mainStage = mainStage;
 		this.model = model;
 		this.parentColumnIndex = parentColumnIndex;
 		this.sidePanel = sidePanel;
 		this.parentColumnControl = parentColumnControl;
+		this.ui = ui;
 	}
 
 	@Override
@@ -123,6 +128,7 @@ public class IssuePanelCell extends ListCell<TurboIssue> {
 			if (e.getButton().equals(MouseButton.PRIMARY)) {
 				if (e.getClickCount() == 1) {
 					onSingleClick(issue);
+					ui.triggerEvent(new IssueSelectedEvent(issue.getId()));
 				}
 				if (e.getClickCount() == 2) {
 					onDoubleClick(issue);

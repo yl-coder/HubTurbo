@@ -28,7 +28,10 @@ import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.RequestException;
 
 import service.ServiceManager;
+import storage.DataCacheFileHandler;
 import storage.DataManager;
+import ui.StatusBar;
+import storage.TurboRepoData;
 import util.CollectionUtilities;
 import util.DialogMessage;
 
@@ -38,6 +41,11 @@ public class Model {
 	public static final String STATE_ALL = "all";
 	public static final String STATE_OPEN = "open";
 	public static final String STATE_CLOSED = "closed";
+	private static final String MESSAGE_LOADING_COLLABS = "Loading collaborators...";
+	private static final String MESSAGE_LOADING_LABELS = "Loading labels...";
+	private static final String MESSAGE_LOADING_MILESTONES = "Loading milestones...";
+	private static final String MESSAGE_LOADING_ISSUES = "Loading issues...";
+	private static final String MESSAGE_LOADING_PROJECT_CONFIG = "Loading project configuration...";
 	
 	private ObservableList<TurboUser> collaborators = FXCollections.observableArrayList();
 	private ObservableList<TurboIssue> issues = FXCollections.observableArrayList();
@@ -48,7 +56,13 @@ public class Model {
 	
 	private ArrayList<Runnable> methodsOnChange = new ArrayList<Runnable>();
 	
+	private TurboRepoData repo;
 	protected IRepositoryIdProvider repoId;
+	
+	private String issuesETag = null;
+	private String collabsETag = null;
+	private String labelsETag = null;
+	private String milestonesETag = null;
 			
 	public Model(){
 		setupModelChangeListeners();
@@ -60,6 +74,7 @@ public class Model {
 	
 	public void setRepoId(IRepositoryIdProvider repoId) {
 		this.repoId = repoId;
+		repo = DataCacheFileHandler.getInstance().getRepoGivenId(repoId.toString());
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -86,14 +101,37 @@ public class Model {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void loadComponents(IRepositoryIdProvider repoId, HashMap<String, List> ghResources){
 		this.repoId = repoId;
+		StatusBar.displayMessage(MESSAGE_LOADING_PROJECT_CONFIG);
 		DataManager.getInstance().loadProjectConfig(getRepoId());
 		cachedGithubComments = new ConcurrentHashMap<Integer, List<Comment>>();
-		loadCollaborators((List<User>) ghResources.get(ServiceManager.KEY_COLLABORATORS));
-		loadLabels((List<Label>) ghResources.get(ServiceManager.KEY_LABELS));
-		loadMilestones((List<Milestone>) ghResources.get(ServiceManager.KEY_MILESTONES));
-		loadIssues((List<Issue>)ghResources.get(ServiceManager.KEY_ISSUES));
+		boolean isTurboResource = false;
+		if (ghResources.get(ServiceManager.KEY_COLLABORATORS) != null) {
+			if (ghResources.get(ServiceManager.KEY_COLLABORATORS).get(0).getClass() == TurboUser.class) {
+				isTurboResource = true;
+			}
+		}
+		
+		if (isTurboResource) {
+			StatusBar.displayMessage(MESSAGE_LOADING_COLLABS);
+			loadTurboCollaborators((List<TurboUser>) ghResources.get(ServiceManager.KEY_COLLABORATORS));
+			StatusBar.displayMessage(MESSAGE_LOADING_LABELS);
+			loadTurboLabels((List<TurboLabel>) ghResources.get(ServiceManager.KEY_LABELS));
+			StatusBar.displayMessage(MESSAGE_LOADING_MILESTONES);
+			loadTurboMilestones((List<TurboMilestone>) ghResources.get(ServiceManager.KEY_MILESTONES));
+			StatusBar.displayMessage(MESSAGE_LOADING_ISSUES);
+			loadTurboIssues((List<TurboIssue>)ghResources.get(ServiceManager.KEY_ISSUES));
+		} else {
+			StatusBar.displayMessage(MESSAGE_LOADING_COLLABS);
+			loadCollaborators((List<User>) ghResources.get(ServiceManager.KEY_COLLABORATORS));
+			StatusBar.displayMessage(MESSAGE_LOADING_LABELS);
+			loadLabels((List<Label>) ghResources.get(ServiceManager.KEY_LABELS));
+			StatusBar.displayMessage(MESSAGE_LOADING_MILESTONES);
+			loadMilestones((List<Milestone>) ghResources.get(ServiceManager.KEY_MILESTONES));
+			StatusBar.displayMessage(MESSAGE_LOADING_ISSUES);
+			loadIssues((List<Issue>)ghResources.get(ServiceManager.KEY_ISSUES));
+		}
 	}
-	
+
 	public void applyMethodOnModelChange(Runnable method){
 		methodsOnChange.add(method);
 	}
@@ -161,11 +199,12 @@ public class Model {
 		}
 		return true;
 	}
-	
-	
+
 	public void updateCachedIssues(List<Issue> issueList){
 		if(issueList.size() == 0){
 			return;
+		} else {
+			enforceStatusStateConsistency(issueList);
 		}
 		WeakReference<Model> selfRef = new WeakReference<Model>(this);
 		for(int i = issueList.size() - 1; i >= 0; i--){
@@ -178,7 +217,7 @@ public class Model {
 		        }
 		   });
 		}
-
+		DataCacheFileHandler.getInstance().writeToFile(repoId.toString(), issuesETag, collabsETag, labelsETag, milestonesETag, collaborators, labels, milestones, issues);
 	}
 		
 	public void updateCachedIssue(TurboIssue issue){
@@ -187,7 +226,7 @@ public class Model {
 			tIssue.copyValues(issue);
 		}else{
 			issues.add(0, issue);
-		}
+		}	
 	}
 	
 	public void addLabel(TurboLabel label){
@@ -277,7 +316,6 @@ public class Model {
 	        	       .forEachOrdered(item -> updateCachedListItem((Listable)item, list));
 	        }
 	   });
-		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -298,13 +336,23 @@ public class Model {
 		});
 	}
 	
+	public void loadTurboCollaborators(List<TurboUser> list) {
+		Platform.runLater(()->{
+			collaborators.clear();
+			collaborators.addAll(list);
+		});
+	}
+	
 	public void updateCachedCollaborators(List<User> ghCollaborators){
 		ArrayList<TurboUser> newCollaborators = CollectionUtilities.getHubTurboUserList(ghCollaborators);
 		updateCachedList(collaborators, newCollaborators);
+		DataCacheFileHandler.getInstance().writeToFile(repoId.toString(), issuesETag, collabsETag, labelsETag, milestonesETag, collaborators, labels, milestones, issues);
 	}
 	
 	public void loadIssues(List<Issue> ghIssues) {
-		enforceStatusStateConsistency(ghIssues);
+		if (ghIssues != null) {
+			enforceStatusStateConsistency(ghIssues);
+		}
 		Platform.runLater(()->{
 			issues.clear();
 			// Add the issues to a temporary list to prevent a quadratic number
@@ -312,6 +360,15 @@ public class Model {
 			ArrayList<TurboIssue> buffer = CollectionUtilities.getHubTurboIssueList(ghIssues);
 			// Add them all at once, so this hopefully propagates only one change
 			issues.addAll(buffer);
+			
+			DataCacheFileHandler.getInstance().writeToFile(repoId.toString(), issuesETag, collabsETag, labelsETag, milestonesETag, collaborators, labels, milestones, issues);
+		});
+	}
+	
+	public void loadTurboIssues(List<TurboIssue> list) {
+		Platform.runLater(()->{
+			issues.clear();
+			issues.addAll(list);
 		});
 	}
 
@@ -347,6 +404,13 @@ public class Model {
 			labels.clear();
 			ArrayList<TurboLabel> buffer = CollectionUtilities.getHubTurboLabelList(ghLabels);
 			labels.addAll(buffer);
+		});
+	}
+	
+	public void loadTurboLabels(List<TurboLabel> list) {
+		Platform.runLater(()->{
+			labels.clear();
+			labels.addAll(list);
 		});
 	}
 	
@@ -391,6 +455,7 @@ public class Model {
 	public void updateCachedLabels(List<Label> ghLabels){
 		ArrayList<TurboLabel> newLabels = CollectionUtilities.getHubTurboLabelList(ghLabels);
 		updateCachedList(labels, newLabels);
+		DataCacheFileHandler.getInstance().writeToFile(repoId.toString(), issuesETag, collabsETag, labelsETag, milestonesETag, collaborators, labels, milestones, issues);
 	}
 	
 	public void loadMilestones(List<Milestone> ghMilestones){
@@ -401,13 +466,37 @@ public class Model {
 		});
 	}
 	
+	public void loadTurboMilestones(List<TurboMilestone> list) {
+		Platform.runLater(()->{
+			milestones.clear();
+			milestones.addAll(list);
+		});
+	}
+	
 	public void updateCachedMilestones(List<Milestone> ghMilestones){
 		ArrayList<TurboMilestone> newMilestones = CollectionUtilities.getHubTurboMilestoneList(ghMilestones);
 		updateCachedList(milestones, newMilestones);
+		DataCacheFileHandler.getInstance().writeToFile(repoId.toString(), issuesETag, collabsETag, labelsETag, milestonesETag, collaborators, labels, milestones, issues);
 	}
 	
 	public void refresh(){
 		ServiceManager.getInstance().restartModelUpdate();
 		applyChangeMethods();
+	}
+	
+	public void updateIssuesETag(String ETag) {
+		this.issuesETag = ETag;
+	}
+	
+	public void updateCollabsETag(String ETag) {
+		this.collabsETag = ETag;
+	}
+	
+	public void updateLabelsETag(String ETag) {
+		this.labelsETag = ETag;
+	}
+	
+	public void updateMilestonesETag(String ETag) {
+		this.milestonesETag = ETag;
 	}
 }

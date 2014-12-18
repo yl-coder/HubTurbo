@@ -27,6 +27,7 @@ import service.ServiceManager;
 import storage.DataManager;
 import ui.RepositorySelector;
 import ui.StatusBar;
+import ui.UI;
 import ui.collaboratormanagement.CollaboratorManagementComponent;
 import ui.issuecolumn.ColumnControl;
 import ui.issuepanel.expanded.IssueDisplayPane;
@@ -34,6 +35,10 @@ import ui.labelmanagement.LabelManagementComponent;
 import ui.milestonemanagement.MilestoneManagementComponent;
 import util.DialogMessage;
 
+/**
+ * Represents the panel on the left side.
+ * Encapsulates operations involving collapsing it and changing its layout.
+ */
 public class SidePanel extends VBox {
 	private static final Logger logger = LogManager.getLogger(SidePanel.class.getName());
 	
@@ -47,25 +52,27 @@ public class SidePanel extends VBox {
 	protected static final int PANEL_PREF_WIDTH = 300;
 	public boolean expandedIssueView = false;
 	
-	Tab labelsTab;
-	Tab milestonesTab;
-	Tab assigneesTab;
-	RepositorySelector repoFields;
+	private Tab labelsTab;
+	private Tab milestonesTab;
+	private Tab assigneesTab;
+	private RepositorySelector repoFields;
 	
+	private UI ui;
 	private Layout layout;
 	private Stage parentStage;
 	private Model model;
 	private ColumnControl columns = null;
-	IssueDisplayPane currentIssueDisplay = null;
+	private IssueDisplayPane currentIssueDisplay = null;
 	
     // To cater for the SidePanel to collapse or expand
     private static final String EXPAND_RIGHT_POINTING_TRIANGLE = "\u25C0";
     private static final String COLLAPSE_LEFT_POINTING_TRIANGLE = "\u25B6";
 	private Label controlLabel;
 
-	public SidePanel(Stage parentStage, Model model) {
+	public SidePanel(UI ui, Stage parentStage, Model model) {
 		this.parentStage = parentStage;
 		this.model = model;
+		this.ui = ui;
 		getStyleClass().add("sidepanel");
 		setLayout(Layout.TABS);
 
@@ -219,7 +226,7 @@ public class SidePanel extends VBox {
 	
 	private RepositorySelector createRepoFields() {
 		RepositorySelector repoIdBox = new RepositorySelector();
-		repoIdBox.setComboValueChangeMethod((val) -> loadRepo(val));
+		repoIdBox.setComboValueChangeMethod(this::loadRepo);
 		return repoIdBox;
 	}
 		
@@ -325,7 +332,7 @@ public class SidePanel extends VBox {
 		if(currentIssueDisplay != null){
 			currentIssueDisplay.cleanup();
 		}
-		currentIssueDisplay = new IssueDisplayPane(displayedIssue, parentStage, model, columns, this, focusRequested, mode);
+		currentIssueDisplay = new IssueDisplayPane(ui, displayedIssue, parentStage, model, columns, this, focusRequested, mode);
 		return currentIssueDisplay;
 	}
 }

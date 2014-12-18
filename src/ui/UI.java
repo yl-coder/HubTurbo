@@ -1,6 +1,8 @@
 package ui;
 
+import java.awt.Rectangle;
 import java.io.IOException;
+import java.util.Optional;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -21,17 +23,33 @@ import org.apache.logging.log4j.Logger;
 import service.ServiceManager;
 import storage.DataManager;
 import ui.issuecolumn.ColumnControl;
+import ui.issuepanel.expanded.BrowserComponent;
 import ui.sidepanel.SidePanel;
+import util.Utility;
+import util.events.Event;
+import util.events.EventHandler;
+import util.events.LoginEvent;
+
+import com.google.common.eventbus.EventBus;
 
 public class UI extends Application {
-	private static final Logger logger = LogManager.getLogger(UI.class.getName());
+
 	private static final String VERSION_NUMBER = " V0.7.13";
+	private static final double WINDOW_EXPANDED_WIDTH = 0.6;
+
+	private static final Logger logger = LogManager.getLogger(UI.class.getName());
+
 	// Main UI elements
 	
 	private Stage mainStage;
 	private ColumnControl columns;
 	private SidePanel sidePanel;
 	private MenuControl menuBar;
+	private BrowserComponent browserComponent;
+
+	// Events
+	
+	private EventBus events;
 		
 	public static void main(String[] args) {
 		Application.launch(args);
@@ -44,9 +62,13 @@ public class UI extends Application {
             logger.error(throwable.getMessage(), throwable);
         });
 		
+		events = new EventBus();
+		
+		browserComponent = new BrowserComponent(this);
+		browserComponent.initialise();
 		initCSS();
 		mainStage = stage;
-		stage.setMaximized(true);
+		stage.setMaximized(false);
 		Scene scene = new Scene(createRoot());
 		setupMainStage(scene);
 		loadFonts();
@@ -61,6 +83,7 @@ public class UI extends Application {
 			} else {
 				columns.loadIssues();
 				sidePanel.refresh();
+				triggerEvent(new LoginEvent());
 			}
 			return true;
 		}).exceptionally(e -> {
@@ -86,24 +109,24 @@ public class UI extends Application {
 
 	private void setupMainStage(Scene scene) {
 		mainStage.setTitle("HubTurbo " + VERSION_NUMBER);
-		mainStage.setMinWidth(800);
-		mainStage.setMinHeight(600);
+		setExpandedWidth(true);
 		mainStage.setScene(scene);
 		mainStage.show();
 		mainStage.setOnCloseRequest(e -> {
 			ServiceManager.getInstance().stopModelUpdate();
 			columns.saveSession();
 			DataManager.getInstance().saveSessionConfig();
+			browserComponent.quit();
 			Platform.exit();
 			System.exit(0);
 		});
 		
 	}
-
+	
 	private Parent createRoot() throws IOException {
 
-		sidePanel = new SidePanel(mainStage, ServiceManager.getInstance().getModel());
-		columns = new ColumnControl(mainStage, ServiceManager.getInstance().getModel(), sidePanel);
+		sidePanel = new SidePanel(this, mainStage, ServiceManager.getInstance().getModel());
+		columns = new ColumnControl(this, mainStage, ServiceManager.getInstance().getModel(), sidePanel);
 		sidePanel.setColumns(columns);
 
 		ScrollPane columnsScroll = new ScrollPane(columns);
@@ -125,5 +148,101 @@ public class UI extends Application {
 		root.setBottom(StatusBar.getInstance());
 
 		return root;
+	}
+
+	/**
+	 * Sets the dimensions of the stage to the maximum usable size
+	 * of the desktop, or to the screen size if this fails.
+	 * @param mainStage
+	 */
+	private Rectangle getDimensions() {
+		Optional<Rectangle> dimensions = Utility.getUsableScreenDimensions();
+		if (dimensions.isPresent()) {
+			return dimensions.get();
+		} else {
+			return Utility.getScreenDimensions();
+		}
+	}
+	
+	/**
+	 * UI operations
+	 */
+
+	/**
+	 * Publish/subscribe API making use of Guava's EventBus.
+	 * Takes a lambda expression to be called upon an event being fired.
+	 * @param handler
+	 */
+	public <T extends Event> void registerEvent(EventHandler handler) {
+		events.register(handler);
+	}
+	
+	/**
+	 * Publish/subscribe API making use of Guava's EventBus.
+	 * Triggers all events of a certain type. EventBus will ensure that the
+	 * event is fired for all subscribers whose parameter is either the same
+	 * or a super type.
+	 * @param handler
+	 */
+	public <T extends Event> void triggerEvent(T event) {
+		events.post(event);
+	}
+	
+	public BrowserComponent getBrowserComponent() {
+		return browserComponent;
+	}
+	
+	/**
+	 * Tracks whether or not the window is in an expanded state.
+	 */
+	private boolean expanded = true;
+
+	public boolean isExpanded() {
+		return expanded;
+	}
+
+	/**
+	 * Toggles the expansion state of the window.
+	 * Returns a boolean value indicating the state.
+	 */
+	public boolean toggleExpandedWidth() {
+		expanded = !expanded;
+		setExpandedWidth(expanded);
+		return expanded;
+	}
+
+	/**
+	 * Returns the X position of the edge of the collapsed window.
+	 */
+	public double getCollapsedX() {
+		return getDimensions().getWidth() * WINDOW_EXPANDED_WIDTH;
+	}
+	
+	/**
+	 * Returns the dimensions of the screen available for use when
+	 * the main window is in a collapsed state.
+	 */
+	public Rectangle getAvailableDimensions() {
+		Rectangle dimensions = getDimensions();
+		return new Rectangle(
+				(int) (dimensions.getWidth() * (1 - WINDOW_EXPANDED_WIDTH)),
+				(int) dimensions.getHeight());
+	}
+
+	/**
+	 * Controls whether or not the main window is expanded (occupying the
+	 * whole screen) or not (occupying a percentage).
+	 * @param expanded
+	 */
+	private void setExpandedWidth(boolean expanded) {
+		this.expanded = expanded;
+		Rectangle dimensions = getDimensions();
+		double width = expanded
+				? dimensions.getWidth()
+				: dimensions.getWidth() * WINDOW_EXPANDED_WIDTH;
+		mainStage.setMinWidth(width);
+		mainStage.setMinHeight(dimensions.getHeight());
+		mainStage.setMaxWidth(width);
+		mainStage.setMaxHeight(dimensions.getHeight());
 	}
 }
