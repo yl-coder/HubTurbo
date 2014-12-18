@@ -15,9 +15,8 @@ import java.util.stream.Collectors;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.SimpleBindings;
+import javax.script.ScriptException;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import model.Model;
 
 import org.controlsfx.dialog.Dialogs;
@@ -73,6 +72,10 @@ public class ScriptManager {
 		Dialogs.create().lightweight().title("Alert").message(message).showInformation();
 	}
 
+	public static void scriptError(String message) {
+		Dialogs.create().lightweight().title("HubTurbo Script Error").message(message).showInformation();
+	}
+
 	public void run(String scriptName) {
 		if (scriptFiles.containsKey(scriptName)) {
 			System.out.println("Scripting: running " + scriptName);
@@ -86,6 +89,11 @@ public class ScriptManager {
 				System.out.println("Scripting: finished running " + scriptName);
 			} catch (Exception e) {
 				System.out.println("Scripting: " + scriptName + " failed");
+				try {
+					engine.eval(String.format("scriptError('%s');", e.toString()));
+				} catch (ScriptException e1) {
+					e1.printStackTrace();
+				}
 				e.printStackTrace();
 			}
 		} else {
@@ -110,7 +118,7 @@ public class ScriptManager {
 
 	private String readPrelude() {
 		ClassLoader classLoader = ScriptManager.class.getClassLoader();
-		File file = new File(classLoader.getResource("scripting/Prelude.js").getFile());
+		File file = new File(classLoader.getResource("scripting/prelude.js").getFile());
 		BufferedReader reader;
 		StringBuilder sb = new StringBuilder();
 		try {
