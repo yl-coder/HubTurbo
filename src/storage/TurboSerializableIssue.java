@@ -1,6 +1,5 @@
 package storage;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,22 +50,7 @@ class TurboSerializableIssue {
 		}
 		
 		this.htmlUrl = issue.getHtmlUrl();
-		
-		ObservableList<TurboLabel> turboLabelObservableList = issue.getLabels();
-		List<TurboLabel> turboLabelList = turboLabelObservableList.stream().collect(Collectors.toList());
-		this.labels = convertFromListOfTurboLabels(turboLabelList);
-	}
-	
-	private List<TurboSerializableLabel> convertFromListOfTurboLabels(List<TurboLabel> turboLabelsList) {
-		List<TurboSerializableLabel> list = new ArrayList<TurboSerializableLabel>();
-		if (turboLabelsList == null) {
-			return null;
-		} else {
-			for (TurboLabel label : turboLabelsList) {
-				list.add(new TurboSerializableLabel(label));
-			}
-		}
-		return list;
+		this.labels = issue.getLabels().stream().map(label -> new TurboSerializableLabel(label)).collect(Collectors.toList());
 	}
 	
 	public TurboIssue toTurboIssue(Model model) {
