@@ -15,6 +15,11 @@ public class Label {
 		this.isExclusive = label.isExclusive();
 	}
 
+	@Override
+	public String toString() {
+		return String.format("Label %s%s%s", group, isExclusive ? "." : ":", name); 
+	}
+
 	// Getter/setter boilerplate
 
 	public String getName() {

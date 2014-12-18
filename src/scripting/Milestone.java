@@ -11,6 +11,11 @@ public class Milestone {
 	private int closed;
 	private int open;
 	
+	@Override
+	public String toString() {
+		return String.format("Milestone %s", title); 
+	}
+
 	// Getter/setter boilerplate
 
 	public int getNumber() {

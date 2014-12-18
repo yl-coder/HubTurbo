@@ -15,6 +15,11 @@ public class User {
 		this.alias = user.getAlias();
 	}
 
+	@Override
+	public String toString() {
+		return String.format("User %s", alias); 
+	}
+
 	// Getter/setter boilerplate
 
 	public String getGithubName() {

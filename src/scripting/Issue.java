@@ -22,6 +22,11 @@ public class Issue {
 	
 	public Issue() {}
 	
+	@Override
+	public String toString() {
+		return String.format("Issue #%d: %s", id, title); 
+	}
+	
 	public Issue(TurboIssue issue) {
 		this.creator = issue.getCreator();
 		this.createdAt = issue.getCreatedAt();
