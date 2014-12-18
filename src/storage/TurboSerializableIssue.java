@@ -19,27 +19,15 @@ class TurboSerializableIssue {
 	private String createdAt;
 	private int numOfComments;
 	private PullRequest pullRequest;
-	
-	//TODO
-	/** problem**/
 	private int id;
 	private String title;
 	private String description;
-	
 	private String cachedDescriptionMarkup;
-	
-	/** problem**/
 	private int parentIssue;
 	private boolean state;
-	
 	private TurboUser assignee;
-	
-	/** problem within **/
 	private TurboSerializableMilestone milestone;
-	
 	private String htmlUrl;
-	
-	/** problem within **/
 	private List<TurboSerializableLabel> labels;
 	
 	public TurboSerializableIssue(TurboIssue issue) {
@@ -47,12 +35,10 @@ class TurboSerializableIssue {
 		this.createdAt = issue.getCreatedAt();
 		this.numOfComments = issue.getNumOfComments();
 		this.pullRequest = issue.getPullRequest();
-		
 		this.id = issue.getId();
 		this.title = issue.getTitle();
 		this.description = issue.getDescription();
 		this.cachedDescriptionMarkup = issue.getDescriptionMarkup();
-		
 		this.parentIssue = issue.getParentIssue();
 		this.state = issue.getOpen();
 		this.assignee = issue.getAssignee();
@@ -90,10 +76,8 @@ class TurboSerializableIssue {
 		tI.setCreatedAt(createdAt);
 		tI.setNumOfComments(numOfComments);
 		tI.setPullRequest(pullRequest);
-		
 		tI.setId(id);
 		tI.setDescriptionMarkup(cachedDescriptionMarkup);
-		
 		tI.setParentIssue(parentIssue);
 		tI.setOpen(state);
 		tI.setAssignee(assignee);
@@ -102,9 +86,7 @@ class TurboSerializableIssue {
 		} else {
 			tI.setMilestone(milestone.toTurboMilestone());
 		}
-			
 		tI.setHtmlUrl(htmlUrl);
-
 		ObservableList<TurboLabel> turboLabelList = FXCollections.observableArrayList();
 		if (labels == null) {
 			tI.setLabels(turboLabelList);

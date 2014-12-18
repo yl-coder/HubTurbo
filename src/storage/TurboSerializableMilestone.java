@@ -4,15 +4,9 @@ import model.TurboMilestone;
 
 class TurboSerializableMilestone {
 	private int number;
-	
-	//TODO
-	// Problem
 	private String title;
-	
 	private String state;
 	private String description;
-	
-	/** Problems **/
 	private String dueOnString;
 	private int closed;
 	private int open;
@@ -22,7 +16,6 @@ class TurboSerializableMilestone {
 		this.title = milestone.getTitle();
 		this.state = milestone.getState();
 		this.description = milestone.getDescription();
-		
 		this.dueOnString = milestone.getDueOnString();
 		this.closed = milestone.getClosed();
 		this.open = milestone.getOpen();
@@ -34,7 +27,6 @@ class TurboSerializableMilestone {
 		tM.setNumber(number);
 		tM.setState(state);
 		tM.setDescription(description);
-		
 		tM.setDueOn(dueOnString);
 		tM.setDueOnString(dueOnString);
 		tM.setClosed(closed);
