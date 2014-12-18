@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
 import model.Model;
 
@@ -80,7 +79,8 @@ public class ScriptManager {
 		if (scriptFiles.containsKey(scriptName)) {
 			System.out.println("Scripting: running " + scriptName);
 			try {
-				String script = prelude + readFile(scriptFiles.get(scriptName));
+
+				String script = readFile(scriptFiles.get(scriptName));
 				
 				List<Issue> issues = model.getIssues().stream().map(issue -> new Issue(issue)).collect(Collectors.toList());
 				List<Milestone> milestones = model.getMilestones().stream().map(milestone -> new Milestone(milestone)).collect(Collectors.toList());
@@ -92,16 +92,13 @@ public class ScriptManager {
 				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("users", users);
 				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("labels", labels);
 
+				engine.eval(prelude);
 				engine.eval(script);
+				
 				System.out.println("Scripting: finished running " + scriptName);
 			} catch (Exception e) {
-				System.out.println("Scripting: " + scriptName + " failed");
-				try {
-					engine.eval(String.format("scriptError('%s');", e.toString()));
-				} catch (ScriptException e1) {
-					e1.printStackTrace();
-				}
-				e.printStackTrace();
+				scriptError(e.toString());
+				System.out.println("Scripting: " + scriptName + " failed: " + e.toString());
 			}
 		} else {
 			// Do nothing
@@ -138,7 +135,7 @@ public class ScriptManager {
 			reader.close();
 			return sb.toString();
 		} catch (Exception e) {
-			System.out.println("Unable to read Prelude.js");
+			System.out.println("Unable to read prelude.js");
 			e.printStackTrace();
 		}
 		return "";
