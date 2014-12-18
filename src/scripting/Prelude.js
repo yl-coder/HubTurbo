@@ -1,7 +1,7 @@
 
-var Scripting = Java.type('scripting.Scripting');
+var ScriptManager = Java.type('scripting.ScriptManager');
 
 function alert(msg) {
-    Scripting.alert(msg);
+    ScriptManager.alert(msg);
 }
 
