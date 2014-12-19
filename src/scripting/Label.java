@@ -2,6 +2,11 @@ package scripting;
 
 import model.TurboLabel;
 
+/**
+ * A data object for passing to scripts.
+ * Must be public or won't be recognised.
+ * Changes to the object do nothing.
+ */
 public class Label {
 	private String name;
 	private String colour;

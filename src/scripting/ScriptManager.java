@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javafx.application.Platform;
-
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -23,9 +21,12 @@ import service.ServiceManager;
 
 public class ScriptManager {
 
-	private String prelude;
+	private static final String SCRIPTS_DIRECTORY = "scripts";
+	private static final String PRELUDE_FILE = "scripting/prelude.js";
+	
 	private ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 	private HashMap<String, String> scriptFiles = new HashMap<>();
+	private String prelude;
 	private Model model;
 
 	public ScriptManager() {
@@ -35,14 +36,14 @@ public class ScriptManager {
 
 	private ArrayList<Path> getScripts() {
 
-		File directory = new File("scripts");
+		File directory = new File(SCRIPTS_DIRECTORY);
 		if (!directory.exists()) {
 			directory.mkdir();
 		}
 
 		final ArrayList<Path> result = new ArrayList<Path>();
 		try {
-			Files.walk(Paths.get("scripts")).forEach(filePath -> {
+			Files.walk(Paths.get(SCRIPTS_DIRECTORY)).forEach(filePath -> {
 				if (Files.isRegularFile(filePath) && filePath.getFileName().toString().endsWith(".js")) {
 					result.add(filePath);
 				}
@@ -77,7 +78,7 @@ public class ScriptManager {
 
 	public void run(String scriptName) {
 		if (scriptFiles.containsKey(scriptName)) {
-			System.out.println("Scripting: running " + scriptName);
+			System.out.println("ScriptManager: running " + scriptName);
 			try {
 
 				String script = readFile(scriptFiles.get(scriptName));
@@ -96,14 +97,14 @@ public class ScriptManager {
 				engine.eval(prelude);
 				engine.eval(script);
 				
-				System.out.println("Scripting: finished running " + scriptName);
+				System.out.println("ScriptManager: finished running " + scriptName);
 			} catch (Exception e) {
 				scriptError(e.toString());
-				System.out.println("Scripting: " + scriptName + " failed: " + e.toString());
+				System.out.println("ScriptManager: " + scriptName + " failed: " + e.toString());
 			}
 		} else {
 			// Do nothing
-			System.out.println("Scripting: nothing done");
+			System.out.println("ScriptManager: nothing done");
 		}
 	}
 
@@ -123,7 +124,7 @@ public class ScriptManager {
 
 	private String readPrelude() {
 		ClassLoader classLoader = ScriptManager.class.getClassLoader();
-		File file = new File(classLoader.getResource("scripting/prelude.js").getFile());
+		File file = new File(classLoader.getResource(PRELUDE_FILE).getFile());
 		BufferedReader reader;
 		StringBuilder sb = new StringBuilder();
 		try {
@@ -136,7 +137,7 @@ public class ScriptManager {
 			reader.close();
 			return sb.toString();
 		} catch (Exception e) {
-			System.out.println("Unable to read prelude.js");
+			System.out.println("Unable to read " + PRELUDE_FILE);
 			e.printStackTrace();
 		}
 		return "";

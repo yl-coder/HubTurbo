@@ -80,6 +80,9 @@ public class LoginDialog extends Dialog<Boolean> {
 
 		repoNameField = new TextField("RepoName");
 		grid.add(repoNameField, 3, 0);
+		
+		repoOwnerField.setText("dariusf");
+		repoNameField.setText("issues");
 
 		Label usernameLabel = new Label("Username:");
 		grid.add(usernameLabel, 0, 1);
@@ -151,7 +154,7 @@ public class LoginDialog extends Dialog<Boolean> {
 		
 		// Run blocking operations in the background
 		
-		StatusBar.displayMessage("Signing in at GitHub...");
+		StatusBar.displayMessage("Signing in to GitHub...");
     	boolean couldLogIn = ServiceManager.getInstance().login(username, password);
 
 		Task<Boolean> task = new Task<Boolean>() {
@@ -161,6 +164,7 @@ public class LoginDialog extends Dialog<Boolean> {
 			    boolean loadSuccess = loadRepository(owner, repo);
 			    final CountDownLatch latch = new CountDownLatch(1);
 			    Platform.runLater(()->{
+			    	StatusBar.displayMessage("Loading columns...");
 			    	columns.resumeColumns();
 			    	latch.countDown();
 			    });
@@ -216,6 +220,7 @@ public class LoginDialog extends Dialog<Boolean> {
 	}
 	
 	private boolean loadRepository(String owner, String repoName) throws IOException {
+    	StatusBar.displayMessage("Setting repository up...");
 		boolean loaded = ServiceManager.getInstance().setupRepository(owner, repoName);
 		ServiceManager.getInstance().setupAndStartModelUpdate();
 		IRepositoryIdProvider currRepo = ServiceManager.getInstance().getRepoId();

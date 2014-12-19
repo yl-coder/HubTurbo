@@ -5,6 +5,11 @@ import java.util.stream.Collectors;
 
 import model.TurboIssue;
 
+/**
+ * A data object for passing to scripts.
+ * Must be public or won't be recognised.
+ * Changes to the object do nothing.
+ */
 public class Issue {
 	private String creator;
 	private String createdAt;

@@ -2,6 +2,11 @@ package scripting;
 
 import model.TurboUser;
 
+/**
+ * A data object for passing to scripts.
+ * Must be public or won't be recognised.
+ * Changes to the object do nothing.
+ */
 public class User {
 	private String githubName = "";
 	private String realName;
