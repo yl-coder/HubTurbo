@@ -12,14 +12,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javafx.application.Platform;
+
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import model.Model;
-
-import org.controlsfx.dialog.Dialogs;
-
 import service.ServiceManager;
 
 public class ScriptManager {
@@ -68,11 +67,12 @@ public class ScriptManager {
 	}
 
 	public static void alert(String message) {
-		Dialogs.create().lightweight().title("Alert").message(message).showInformation();
+		// Concurrent modification exceptions abound
+//		Dialogs.create().lightweight().title("Alert").message(message).showInformation();
 	}
 
 	public static void scriptError(String message) {
-		Dialogs.create().lightweight().title("HubTurbo Script Error").message(message).showInformation();
+//		Dialogs.create().lightweight().title("HubTurbo Script Error").message(message).showInformation();
 	}
 
 	public void run(String scriptName) {
@@ -87,6 +87,7 @@ public class ScriptManager {
 				List<User> users = model.getCollaborators().stream().map(user -> new User(user)).collect(Collectors.toList());
 				List<Label> labels = model.getLabels().stream().map(label -> new Label(label)).collect(Collectors.toList());
 				
+				engine.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
 				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("issues", issues);
 				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("milestones", milestones);
 				engine.getBindings(ScriptContext.ENGINE_SCOPE).put("users", users);
