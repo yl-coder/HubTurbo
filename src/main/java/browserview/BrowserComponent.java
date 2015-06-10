@@ -13,6 +13,9 @@ import ui.UI;
 import util.GitHubURL;
 import util.PlatformSpecific;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -41,6 +44,7 @@ public class BrowserComponent {
     private static final int SWP_NOMOVE = 0x0002;
     private static HWND browserWindowHandle;
     private static User32 user32;
+    private static ScriptEngine scriptEngine;
 
     private final UI ui;
     private ChromeDriverEx driver = null;
@@ -261,19 +265,20 @@ public class BrowserComponent {
         executor.execute(() -> {
             if (isBrowserActive()) {
                 try {
+                    bringToFront();
                     operation.run();
                     pageContentOnLoad = getCurrentPageSource();
                 } catch (WebDriverException e) {
                     switch (BrowserComponentError.fromErrorMessage(e.getMessage())) {
-                    case NoSuchWindow:
-                        resetBrowser();
-                        runBrowserOperation(operation); // Recurse and repeat
-                        break;
-                    case NoSuchElement:
-                        logger.info("Warning: no such element! " + e.getMessage());
-                        break;
-                    default:
-                        break;
+                        case NoSuchWindow:
+                            resetBrowser();
+                            runBrowserOperation(operation); // Recurse and repeat
+                            break;
+                        case NoSuchElement:
+                            logger.info("Warning: no such element! " + e.getMessage());
+                            break;
+                        default:
+                            break;
                     }
                 }
             } else {
@@ -282,6 +287,26 @@ public class BrowserComponent {
                 runBrowserOperation(operation);
             }
         });
+    }
+
+    public void bringToFront() {
+        if (PlatformSpecific.isOnMac()) {
+            try {
+                if (scriptEngine == null) {
+                    ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+                    scriptEngine = scriptEngineManager.getEngineByName("AppleScriptEngine");
+                }
+                scriptEngine.eval("tell application \"System Events\" to repeat with p in " +
+                        "(every application process whose name contains \"Chrome\" " +
+                        "and name does not contain \"Helper\")\nif (title of window of p as string) " +
+                        "contains \"" + driver.getTitle() + "\" " +
+                        "then tell process p to perform action \"AXRaise\" of window 1 of p\nend repeat");
+            } catch (ScriptException e) {
+                logger.info("Bring browser window to front script exception! " + e.getLocalizedMessage());
+            } catch (Exception e) {
+                logger.info("Bring browser window to front exception! " + e.getLocalizedMessage());
+            }
+        }
     }
 
     /**

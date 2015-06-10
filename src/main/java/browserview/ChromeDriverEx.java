@@ -92,4 +92,12 @@ public class ChromeDriverEx {
     public Object executeScript(String script) {
         return !isTestChromeDriver ? driver.executeScript(script) : "";
     }
+
+    public String getTitle() {
+        if (!isTestChromeDriver) {
+            return driver.getTitle();
+        } else {
+            return "";
+        }
+    }
 }
