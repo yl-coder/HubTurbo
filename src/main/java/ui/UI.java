@@ -291,6 +291,7 @@ public class UI extends Application implements EventDispatcher {
             prefs.saveGlobalConfig();
         }
         if (!TestController.isTestMode() || TestController.isCloseOnQuit()) {
+            // TODO apply update here if prompted user did not want to update
             Platform.exit();
             System.exit(0);
         }
