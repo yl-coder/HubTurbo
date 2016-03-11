@@ -81,14 +81,12 @@ public class UpdateManager {
             return;
         }
 
-        markStartOfAppUpdateDownload();
-
         if (!downloadUpdateForApplication(updateDownloadLink.get().applicationFileLocation)) {
             logger.error(ERROR_DOWNLOAD_UPDATE_APP);
             return;
         }
 
-        markEndOfAppUpdateDownload(updateDownloadLink.get().version);
+        markAppUpdateDownloadSuccess(updateDownloadLink.get().version);
 
         // TODO prompt user for restarting application to apply update
         // If yes, quit application and run jar updater with execution
@@ -106,6 +104,9 @@ public class UpdateManager {
             logger.error("Failed to create update directories");
             return false;
         }
+
+        updateConfig.setLastUpdateDownloadStatus(false);
+        saveUpdateConfig();
 
         return true;
     }
@@ -182,12 +183,7 @@ public class UpdateManager {
         return updateData.getUpdateDownloadLink();
     }
 
-    private void markStartOfAppUpdateDownload() {
-        updateConfig.setLastUpdateDownloadStatus(false);
-        saveUpdateConfig();
-    }
-
-    private void markEndOfAppUpdateDownload(Version versionDownloaded) {
+    private void markAppUpdateDownloadSuccess(Version versionDownloaded) {
         updateConfig.setLastUpdateDownloadStatus(true);
         updateConfig.addToVersionPreviouslyDownloaded(versionDownloaded);
         saveUpdateConfig();
@@ -203,6 +199,15 @@ public class UpdateManager {
         File updateConfigFile = new File(Preferences.DIRECTORY + File.separator + UPDATE_CONFIG_FILENAME);
         JsonSerializationConverter jsonConverter = new JsonSerializationConverter(updateConfigFile);
         jsonConverter.saveToFile(updateConfig);
+    }
+
+    public void onAppQuit() {
+        if (updateConfig.getLastUpdateDownloadStatus()) {
+            updateConfig.setLastUpdateDownloadStatus(false);
+            saveUpdateConfig();
+
+            // TODO run Jar Updater with no execution
+        }
     }
 
     public void showUpdateProgressWindow() {

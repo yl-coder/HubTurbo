@@ -32,7 +32,6 @@ import ui.components.pickers.LabelPicker;
 import ui.issuepanel.PanelControl;
 import undo.UndoController;
 import updater.UpdateManager;
-import updater.UpdateManagerStub;
 import util.*;
 import util.events.*;
 import util.events.Event;
@@ -291,7 +290,7 @@ public class UI extends Application implements EventDispatcher {
             prefs.saveGlobalConfig();
         }
         if (!TestController.isTestMode() || TestController.isCloseOnQuit()) {
-            // TODO apply update here if prompted user did not want to update
+            updateManager.onAppQuit();
             Platform.exit();
             System.exit(0);
         }
