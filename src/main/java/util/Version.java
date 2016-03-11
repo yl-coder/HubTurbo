@@ -55,6 +55,10 @@ public class Version implements Comparable<Version> {
         return String.format("V%d.%d.%d", major, minor, patch);
     }
 
+    /**
+     * Gets HubTurbo current version
+     * @return version object of HubTurbo's current version
+     */
     public static Version getCurrentVersion() {
         return new Version(UI.VERSION_MAJOR, UI.VERSION_MINOR, UI.VERSION_PATCH);
     }

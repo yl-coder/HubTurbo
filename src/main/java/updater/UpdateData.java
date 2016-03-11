@@ -9,17 +9,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Represents update data serializable
+ * Represents update data to be put on server for HT to check if there is new update
  */
 public class UpdateData {
 
     public List<UpdateDownloadLink> listOfLinks;
 
     /**
-     * Get UpdateDownloadLink for update
+     * Get UpdateDownloadLink for update.
      * @return Optional.empty() if there is no update, UpdateDownloadLink of update that can be downloaded otherwise
      */
-    // TODO
     public Optional<UpdateDownloadLink> getUpdateDownloadLink() {
         if (listOfLinks == null) {
             return Optional.empty();

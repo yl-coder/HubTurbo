@@ -5,7 +5,7 @@ import util.Version;
 import java.net.URL;
 
 /**
- *
+ * Represents a HT version with its download link
  */
 public class UpdateDownloadLink implements Comparable<UpdateDownloadLink> {
     public Version version;

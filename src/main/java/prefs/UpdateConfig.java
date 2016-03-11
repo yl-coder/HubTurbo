@@ -6,21 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Contains configuration information for updating
  */
 public class UpdateConfig {
 
-    private Version lastUpdateVersionDownloaded;
     private boolean lastUpdateDownloadStatus;
     private List<Version> listOfVersionsPreviouslyDownloaded;
-
-    public void setLastUpdateVersionDownloaded(Version version) {
-        this.lastUpdateVersionDownloaded = version;
-    }
-
-    public Version getLastUpdateVersionDownloaded() {
-        return this.lastUpdateVersionDownloaded;
-    }
 
     public void setLastUpdateDownloadStatus(boolean status) {
         this.lastUpdateDownloadStatus = status;

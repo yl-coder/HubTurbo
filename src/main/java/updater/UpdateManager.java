@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 import prefs.Preferences;
 import prefs.UpdateConfig;
 import ui.UpdateProgressWindow;
-import util.JsonSerializationConverter;
+import util.JsonFileConverter;
 import util.Version;
 
 import java.io.File;
@@ -176,7 +176,7 @@ public class UpdateManager {
 
     private Optional<UpdateDownloadLink> getUpdateDownloadLinkOfUpdate() {
         File updateDataFile = new File(UPDATE_LOCAL_DATA_NAME);
-        JsonSerializationConverter jsonUpdateDataConverter = new JsonSerializationConverter(updateDataFile);
+        JsonFileConverter jsonUpdateDataConverter = new JsonFileConverter(updateDataFile);
         UpdateData updateData = (UpdateData) jsonUpdateDataConverter.loadFromFile(UpdateData.class)
                 .orElse(new UpdateData());
 
@@ -191,16 +191,19 @@ public class UpdateManager {
 
     private void loadUpdateConfig() {
         File updateConfigFile = new File(Preferences.DIRECTORY + File.separator + UPDATE_CONFIG_FILENAME);
-        JsonSerializationConverter jsonConverter = new JsonSerializationConverter(updateConfigFile);
+        JsonFileConverter jsonConverter = new JsonFileConverter(updateConfigFile);
         this.updateConfig = (UpdateConfig) jsonConverter.loadFromFile(UpdateConfig.class).orElse(new UpdateConfig());
     }
 
     private void saveUpdateConfig() {
         File updateConfigFile = new File(Preferences.DIRECTORY + File.separator + UPDATE_CONFIG_FILENAME);
-        JsonSerializationConverter jsonConverter = new JsonSerializationConverter(updateConfigFile);
+        JsonFileConverter jsonConverter = new JsonFileConverter(updateConfigFile);
         jsonConverter.saveToFile(updateConfig);
     }
 
+    /**
+     * Runs updating clean up on quitting HubTurbo
+     */
     public void onAppQuit() {
         if (updateConfig.getLastUpdateDownloadStatus()) {
             updateConfig.setLastUpdateDownloadStatus(false);

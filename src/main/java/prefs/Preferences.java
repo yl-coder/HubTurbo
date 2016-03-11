@@ -1,7 +1,6 @@
 package prefs;
 
 import org.eclipse.egit.github.core.RepositoryId;
-import util.Version;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

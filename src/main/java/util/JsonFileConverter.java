@@ -11,21 +11,25 @@ import java.time.ZoneId;
 import java.util.Optional;
 
 /**
- *
+ * Converts JSON file from and to object
  */
-public class JsonSerializationConverter {
-    private static final Logger logger = LogManager.getLogger(JsonSerializationConverter.class.getName());
+public class JsonFileConverter {
+    private static final Logger logger = LogManager.getLogger(JsonFileConverter.class.getName());
     private static final String CHARSET = "UTF-8";
 
     private Gson gson;
     private final File jsonFile;
 
-    public JsonSerializationConverter(File jsonFile) {
+    public JsonFileConverter(File jsonFile) {
         this.jsonFile = jsonFile;
         setupGson();
         createDirectories();
     }
 
+    /**
+     * Save a given object into JSON file
+     * @param object object to be saved to JSON file
+     */
     public void saveToFile(Object object) {
         try {
             Writer writer = new OutputStreamWriter(new FileOutputStream(jsonFile) , CHARSET);
@@ -36,6 +40,11 @@ public class JsonSerializationConverter {
         }
     }
 
+    /**
+     * Loads an object from a JSON file
+     * @param objectClass class of the object to be loaded; used to parse the JSON
+     * @return The object from JSON file, or Optional.empty() if the file can't be parsed
+     */
     public Optional<Object> loadFromFile(Class<?> objectClass) {
         if (jsonFile.exists()) {
             try (Reader reader =
@@ -50,7 +59,6 @@ public class JsonSerializationConverter {
             return Optional.empty();
         }
     }
-
 
     private void setupGson() {
         gson = new GsonBuilder()

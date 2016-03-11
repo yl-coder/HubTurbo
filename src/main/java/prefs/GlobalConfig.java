@@ -2,7 +2,6 @@ package prefs;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import util.Version;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
