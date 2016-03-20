@@ -150,7 +150,7 @@ public final class TestController {
     }
 
     /**
-     * Creates a partially stubbed RepoIO used for testing
+     * Creates a partially stubbed RepoIO used for testing.
      * @param jsonStoreToBeUsed store to be used with RepoIO,
      *                          defaults to a new instance of JSONStore if this value is empty
      * @return
@@ -169,7 +169,7 @@ public final class TestController {
             return new UpdateManagerStub();
         } else {
             UpdateProgressWindow updateProgressWindow = new UpdateProgressWindow();
-            return new UpdateManager(updateProgressWindow);
+            return new UpdateManager(ui, updateProgressWindow);
         }
     }
 }
