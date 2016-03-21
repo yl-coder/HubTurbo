@@ -67,7 +67,8 @@ public class MenuControl extends MenuBar {
     }
 
     private Menu createFileMenu() {
-        Menu file = new Menu("File");
+
+        Menu file = new Menu("App");
 
         MenuItem logout = new MenuItem("Logout");
         logout.setOnAction(e -> {
