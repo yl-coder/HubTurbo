@@ -1,11 +1,10 @@
 package guitests;
 
-import javafx.scene.control.ComboBox;
 import javafx.scene.input.KeyCode;
+
 import org.junit.Test;
 import ui.UI;
 import ui.components.KeyboardShortcuts;
-import util.PlatformEx;
 import util.events.*;
 import util.events.testevents.PrimaryRepoChangedEvent;
 import util.events.testevents.PrimaryRepoChangedEventHandler;
@@ -25,7 +24,7 @@ public class UIEventTests extends UITest {
     private static void resetEventTestCount() {
         eventTestCount = 0;
     }
-    
+
     private static void getEventRepoId(PrimaryRepoChangedEvent e) {
         defaultRepoId = e.repoId;
     }
@@ -70,10 +69,10 @@ public class UIEventTests extends UITest {
     public void panelClickedTest() {
         UI.events.registerEvent((PanelClickedEventHandler) e -> UIEventTests.increaseEventTestCount());
         resetEventTestCount();
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         assertEquals(1, eventTestCount);
     }
-    
+
     @Test
     public void defaultRepoSwitchedTest() {
         UI.events.registerEvent((PrimaryRepoChangedEventHandler) e -> UIEventTests.increaseEventTestCount());
@@ -84,16 +83,24 @@ public class UIEventTests extends UITest {
         resetEventTestCount();
 
         // Test with multiple repositories
-        ComboBox<String> comboBox = find("#repositorySelector");
-        click(comboBox);
+        clickRepositorySelector();
         selectAll();
         type("dummy3/dummy3");
         push(KeyCode.ENTER);
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         resetEventTestCount();
         press(KeyboardShortcuts.SWITCH_DEFAULT_REPO);
         assertEquals(1, eventTestCount);
         press(KeyboardShortcuts.SWITCH_DEFAULT_REPO);
         assertEquals("dummy3/dummy3", defaultRepoId);
+    }
+
+    @Test
+    public void triggerIssuePicker_dialogAppears() {
+        UI.events.registerEvent((ShowIssuePickerEventHandler) e -> UIEventTests.increaseEventTestCount());
+        resetEventTestCount();
+        press(KeyboardShortcuts.SHOW_ISSUE_PICKER);
+        assertEquals(1, eventTestCount);
+        press(KeyCode.ESCAPE);
     }
 }

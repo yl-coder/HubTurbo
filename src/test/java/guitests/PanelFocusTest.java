@@ -13,10 +13,9 @@ import org.loadui.testfx.utils.FXTestUtils;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import prefs.ConfigFileHandler;
-import prefs.GlobalConfig;
 import prefs.PanelInfo;
 import prefs.Preferences;
+import ui.IdGenerator;
 import ui.TestController;
 import ui.issuepanel.PanelControl;
 
@@ -116,7 +115,7 @@ public class PanelFocusTest extends UITest {
         pushKeys(KeyCode.DOWN);
         pushKeys(KeyCode.DOWN);
         pushKeys(KeyCode.ENTER);
-        ((TextField) find("#boardnameinput")).setText("Board 1");
+        ((TextField) find(IdGenerator.getBoardNameInputFieldIdReference())).setText("Board 1");
         click("OK");
         awaitCondition(() -> 1 == panelControl.getNumberOfSavedBoards());
         // 2. Create a new panel so that scroll bar is on the left
@@ -135,9 +134,7 @@ public class PanelFocusTest extends UITest {
     }
 
     private void createDefaultPanels() {
-        ConfigFileHandler configFileHandler =
-            new ConfigFileHandler(Preferences.DIRECTORY, Preferences.TEST_CONFIG_FILE);
-        GlobalConfig globalConfig = new GlobalConfig();
+        Preferences prefs = TestController.createTestPreferences();
 
         PanelInfo test1 = new PanelInfo();
         PanelInfo test2 = new PanelInfo();
@@ -147,7 +144,6 @@ public class PanelFocusTest extends UITest {
         panels.add(test2);
         panels.add(test3);
 
-        globalConfig.setPanelInfo(panels);
-        configFileHandler.saveGlobalConfig(globalConfig);
+        prefs.setPanelInfo(panels);
     }
 }

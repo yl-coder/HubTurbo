@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.ListCell;
 import org.apache.logging.log4j.Logger;
 import ui.GuiElement;
+import ui.IdGenerator;
 import util.HTLog;
 
 import java.util.HashSet;
@@ -38,13 +39,13 @@ public class ListPanelCell extends ListCell<GuiElement> {
         updateStyleToMatchStatus(issue);
 
         setGraphic(new ListPanelCard(guiElement, parent, issuesWithNewComments));
-        this.setId(issue.getRepoId() + "_col" + parentPanelIndex + "_" + issue.getId());
+        this.setId(IdGenerator.getPanelCellId(parentPanelIndex, issue.getId()));
     }
 
     private void updateStyleToMatchStatus(TurboIssue issue) {
         final String closedStyle = "issue-cell-closed";
         boolean isCurrentStyleClosed = getStyleClass().contains(closedStyle);
-        if (!issue.isOpen()){
+        if (!issue.isOpen()) {
             if (!isCurrentStyleClosed) {
                 getStyleClass().add(closedStyle);
             }

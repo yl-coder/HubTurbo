@@ -46,8 +46,8 @@ public class IssuePanelTests extends UITest {
     public void keepSelectionTest() {
         // checks to see if ListPanel keeps the same issue selected even after
         // the list is updated
-        ListPanel issuePanel = find("#dummy/dummy_col0");
-        click("#dummy/dummy_col0_filterTextField");
+        ListPanel issuePanel = getPanel(0);
+        clickFilterTextFieldAtPanel(0);
         selectAll();
         type("sort:date");
         push(KeyCode.ENTER);
@@ -67,7 +67,7 @@ public class IssuePanelTests extends UITest {
 
     @Test
     public void guiElementsTest() {
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         selectAll();
         type("id:8");
         push(KeyCode.ENTER);
@@ -87,7 +87,7 @@ public class IssuePanelTests extends UITest {
 
         // Next we check for a label that was deleted from the repository, but should still be displayed under
         // metadata (label update events).
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         selectAll();
         type("id:9 updated:5");
         PlatformEx.waitOnFxThread();
@@ -107,14 +107,14 @@ public class IssuePanelTests extends UITest {
                 Optional.empty());
 
         assertEquals(0,
-                TurboIssueEvent.createLabelUpdateEventNodes(
-                        guiElement, new ArrayList<>()).size());
+                     TurboIssueEvent.createLabelUpdateEventNodes(
+                             guiElement, new ArrayList<>()).size());
     }
 
     @Test
     public void testCreateLabelUpdateEventNodesForSampleEvents()
             throws IllegalAccessException, IllegalArgumentException, InvocationTargetException,
-                   NoSuchMethodException, SecurityException {
+            NoSuchMethodException, SecurityException {
 
         Method layoutMethod = ListPanelCard.class.getDeclaredMethod(
                 "layoutEvents", GuiElement.class, List.class, List.class);
@@ -144,8 +144,8 @@ public class IssuePanelTests extends UITest {
         assertEquals(4, ((HBox) nodes.get(2)).getChildren().size());
         assertEquals(4, ((HBox) nodes.get(3)).getChildren().size());
         assertEquals(4, ((HBox) nodes.get(4)).getChildren().size());
-        assertEquals(5, ((VBox) layoutMethod.invoke(null,
-                                    guiElement, events, new ArrayList<Comment>())).getChildren().size());
+        assertEquals(5, ((VBox) layoutMethod.invoke(null, guiElement, events, new ArrayList<Comment>()))
+                                            .getChildren().size());
     }
 
     @Test
@@ -160,18 +160,18 @@ public class IssuePanelTests extends UITest {
         List<TurboIssueEvent> events = new ArrayList<>();
         events.add(
                 new TurboIssueEvent(
-                    new User().setLogin("A"), IssueEventType.Labeled,
+                        new User().setLogin("A"), IssueEventType.Labeled,
                         Utility.localDateTimeToDate(LocalDateTime.of(2015, 1, 1, 1, 1, 0)))
-                    .setLabelName("X").setLabelColour("ffffff"));
+                        .setLabelName("X").setLabelColour("ffffff"));
 
         assertEquals(1,
-                TurboIssueEvent.createLabelUpdateEventNodes(
-                        guiElement, events).size());
+                     TurboIssueEvent.createLabelUpdateEventNodes(
+                             guiElement, events).size());
     }
 
     @Test
     public void showAuthorAssignee_assignedPullRequest_authorAssigneeShown() {
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         selectAll();
         type("id:11");
         push(KeyCode.ENTER);
@@ -184,7 +184,7 @@ public class IssuePanelTests extends UITest {
 
     @Test
     public void showAuthorAssignee_assignedIssue_onlyAssigneeShown() {
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         selectAll();
         type("id:12");
         push(KeyCode.ENTER);

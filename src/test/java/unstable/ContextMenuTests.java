@@ -13,9 +13,9 @@ import javafx.scene.input.KeyCode;
 import org.junit.Before;
 import org.junit.Test;
 
+import ui.IdGenerator;
 import ui.components.FilterTextField;
 import ui.listpanel.ListPanel;
-import ui.listpanel.ListPanelCell;
 
 
 public class ContextMenuTests extends UITest {
@@ -28,11 +28,11 @@ public class ContextMenuTests extends UITest {
         Platform.runLater(stage::show);
         Platform.runLater(stage::requestFocus);
 
-        FilterTextField filterTextField = find("#dummy/dummy_col0_filterTextField");
+        FilterTextField filterTextField = getFilterTextFieldAtPanel(0);
         filterTextField.setText("");
         Platform.runLater(filterTextField::requestFocus);
 
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         push(KeyCode.ENTER);
         sleep(EVENT_DELAY);
     }
@@ -43,17 +43,17 @@ public class ContextMenuTests extends UITest {
      */
     @Test
     public void contextMenuDisabling_noIssueInListView_contextMenuItemsDisabled() {
-        ListPanel issuePanel = find("#dummy/dummy_col0");
+        ListPanel issuePanel = getPanel(0);
 
-        click("#dummy/dummy_col0_filterTextField");
+        clickFilterTextFieldAtPanel(0);
         type("asdf");
         push(KeyCode.ENTER);
         sleep(EVENT_DELAY);
-        rightClick("#dummy/dummy_col0");
+        rightClickPanel(0);
         sleep(EVENT_DELAY);
 
         ContextMenu contextMenu = issuePanel.getContextMenu();
-        for (MenuItem menuItem : contextMenu.getItems()){
+        for (MenuItem menuItem : contextMenu.getItems()) {
             assertTrue(menuItem.isDisable());
         }
     }
@@ -63,38 +63,83 @@ public class ContextMenuTests extends UITest {
      * context menu items
      */
     @Test
-    public void test2() {
-        ListPanelCell listPanelCell = find("#dummy/dummy_col0_9");
-
-        click("#dummy/dummy_col0_9");
-        rightClick("#dummy/dummy_col0_9");
+    public void testMarkAsReadUnread() {
+        clickIssue(0, 9);
+        rightClickIssue(0, 9);
         sleep(EVENT_DELAY);
         click("Mark as read (E)");
         sleep(EVENT_DELAY);
-        assertTrue(listPanelCell.getIssue().isCurrentlyRead());
+        assertTrue(getIssueCell(0, 9).getIssue().isCurrentlyRead());
 
-        click("#dummy/dummy_col0_9");
-        rightClick("#dummy/dummy_col0_9");
+        clickIssue(0, 9);
+        rightClickIssue(0, 9);
         sleep(EVENT_DELAY);
         click("Mark as unread (U)");
         sleep(EVENT_DELAY);
-        assertFalse(listPanelCell.getIssue().isCurrentlyRead());
+        assertFalse(getIssueCell(0, 9).getIssue().isCurrentlyRead());
     }
 
     /**
      * Tests selecting "Change labels" context menu item
      */
     @Test
-    public void test3() {
-        click("#dummy/dummy_col0_9");
-        rightClick("#dummy/dummy_col0_9");
+    public void testChangeLabels() {
+        clickIssue(0, 9);
+        rightClickIssue(0, 9);
         sleep(EVENT_DELAY);
         click("Change labels (L)");
         sleep(DIALOG_DELAY);
 
-        assertNotNull(find("#queryField"));
+        assertNotNull(getLabelPickerTextField());
 
         push(KeyCode.ESCAPE);
+        sleep(EVENT_DELAY);
+    }
+
+    /**
+     * Tests selecting "Change milestone" context menu item
+     */
+    @Test
+    public void contextMenu_selectChangeMilestoneMenu_successful() {
+        click("#dummy/dummy_col0_9");
+        rightClick("#dummy/dummy_col0_9");
+        sleep(EVENT_DELAY);
+        click("Change milestone (M)");
+        sleep(DIALOG_DELAY);
+
+        assertNotNull(find("#milestonePickerTextField"));
+
+        push(KeyCode.ESCAPE);
+        sleep(EVENT_DELAY);
+    }
+
+    /**
+     * Tests selecting "Close issue" and "Reopen issue"
+     */
+    @Test
+    public void testCloseReopenIssue() {
+        click("#dummy/dummy_col0_9");
+        rightClick("#dummy/dummy_col0_9");
+        sleep(EVENT_DELAY);
+        click("Close issue (C)");
+        sleep(EVENT_DELAY);
+        waitUntilNodeAppears("OK");
+        click("OK");
+        sleep(EVENT_DELAY);
+        waitUntilNodeAppears("Undo");
+        click("Undo");
+        sleep(EVENT_DELAY);
+
+        click("#dummy/dummy_col0_6");
+        rightClick("#dummy/dummy_col0_6");
+        sleep(EVENT_DELAY);
+        click("Reopen issue (O)");
+        sleep(EVENT_DELAY);
+        waitUntilNodeAppears("OK");
+        click("OK");
+        sleep(EVENT_DELAY);
+        waitUntilNodeAppears("Undo");
+        click("Undo");
         sleep(EVENT_DELAY);
     }
 

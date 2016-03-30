@@ -5,12 +5,10 @@ import static ui.components.KeyboardShortcuts.JUMP_TO_FILTER_BOX;
 import static ui.components.KeyboardShortcuts.MAXIMIZE_WINDOW;
 import static ui.components.KeyboardShortcuts.MINIMIZE_WINDOW;
 import static ui.components.KeyboardShortcuts.SWITCH_BOARD;
-import filter.expression.QualifierType;
+
 import javafx.application.Platform;
-import ui.GUIController;
-import ui.GuiElement;
+import ui.*;
 import ui.components.PanelMenuBar;
-import backend.resource.TurboUser;
 import filter.FilterException;
 import filter.Parser;
 import filter.expression.FilterExpression;
@@ -23,23 +21,19 @@ import javafx.scene.layout.HBox;
 import javafx.scene.control.Label;
 import javafx.scene.text.Text;
 import javafx.scene.input.KeyEvent;
-import ui.TestController;
-import ui.UI;
 import ui.components.FilterTextField;
 import util.events.*;
 import util.events.testevents.UIComponentFocusEvent;
 import prefs.PanelInfo;
 
-import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A FilterPanel is an AbstractPanel meant for containing issues and an accompanying filter text field,
  * which specifies the issues to be contained within as well as their order.
- *
+ * <p>
  * The FilterPanel does not perform the filtering itself - it merely specifies how filtering is to be done.
- *
+ * <p>
  * The FilterPanel also does not specify how the list is to be displayed -- subclasses override methods
  * which determine that.
  */
@@ -54,11 +48,11 @@ public abstract class FilterPanel extends AbstractPanel {
 
     protected FilterExpression currentFilterExpression = Qualifier.EMPTY;
 
-    public FilterPanel(UI ui, GUIController guiController, PanelControl parentPanelControl, int panelIndex) {
-        super(guiController, parentPanelControl, panelIndex);
+    public FilterPanel(UI ui, PanelControl parentPanelControl, int panelIndex) {
+        super(parentPanelControl, panelIndex);
         this.ui = ui;
 
-        panelMenuBar = new PanelMenuBar(this, guiController, ui);
+        panelMenuBar = new PanelMenuBar(this, ui);
         getChildren().addAll(panelMenuBar, createFilterBox());
         setUpEventHandler();
         focusedProperty().addListener((unused, wasFocused, isFocused) -> {
@@ -86,7 +80,7 @@ public abstract class FilterPanel extends AbstractPanel {
             }
         });
     }
-    
+
     private void setFocusToFilterBox() {
         if (TestController.isTestMode()) {
             ui.triggerEvent(new UIComponentFocusEvent(UIComponentFocusEvent.EventType.FILTER_BOX));
@@ -97,7 +91,7 @@ public abstract class FilterPanel extends AbstractPanel {
     }
 
     private void setUpEventHandler() {
-        this.setOnMouseClicked(e-> {
+        this.setOnMouseClicked(e -> {
             ui.triggerEvent(new PanelClickedEvent(this.panelIndex));
             requestFocus();
         });
@@ -107,36 +101,21 @@ public abstract class FilterPanel extends AbstractPanel {
         ui.registerEvent((ApplyingFilterEventHandler) this::startLoadingAnimationIfApplicable);
         ui.registerEvent((AppliedFilterEventHandler) this::stopLoadingAnimationIfApplicable);
         ui.registerEvent((FilterExceptionEventHandler) this::handleFilterException);
+        ui.registerEvent((FilterWarningEventHandler) this::handleFilterWarning);
     }
-
-    private final ModelUpdatedEventHandler onModelUpdate = e -> {
-
-        // Update keywords
-        List<String> all = new ArrayList<>(QualifierType.getCompletionKeywords());
-        all.addAll(e.users.stream()
-            .map(TurboUser::getLoginName)
-            .collect(Collectors.toList()));
-
-        // Ensure that completions appear in lexicographical order
-        Collections.sort(all);
-
-        filterTextField.setCompletionKeywords(all);
-    };
 
     private Node createFilterBox() {
         filterTextField = new FilterTextField(Parser::check)
-            .setOnCancel(this::requestFocus)
-            .setOnShowDocs(ui.getBrowserComponent()::showFilterDocs)
-            .setOnConfirm((text) -> {
-                Platform.runLater(() -> ui.triggerEvent(new ApplyingFilterEvent(this)));
-                applyStringFilter(text);
-                return text;
-            });
-        filterTextField.setId(guiController.getDefaultRepo() + "_col" + panelIndex + "_filterTextField");
+                .setOnCancel(this::requestFocus)
+                .setOnShowDocs(ui.getBrowserComponent()::showFilterDocs)
+                .setOnConfirm((text) -> {
+                    Platform.runLater(() -> ui.triggerEvent(new ApplyingFilterEvent(this)));
+                    applyStringFilter(text);
+                    return text;
+                });
+        filterTextField.setId(IdGenerator.getPanelFilterTextFieldId(panelIndex));
         filterTextField.setMinWidth(388);
         filterTextField.setMaxWidth(388);
-
-        ui.registerEvent(onModelUpdate);
 
         filterTextField.setOnMouseClicked(e -> ui.triggerEvent(new PanelClickedEvent(panelIndex)));
 
@@ -151,18 +130,17 @@ public abstract class FilterPanel extends AbstractPanel {
 
     private void setupPanelDragEvents(Node dropNode) {
         dropNode.setOnDragEntered(e -> {
-                if (parentPanelControl.getCurrentlyDraggedPanelIndex() != panelIndex) {
-                    // Apparently the dragboard can't be updated while
-                    // the drag is in progress. This is why we use an
-                    // external source for updates.
-                    assert parentPanelControl.getCurrentlyDraggedPanelIndex() != -1;
-                    int previous = parentPanelControl.getCurrentlyDraggedPanelIndex();
-                    parentPanelControl.setCurrentlyDraggedPanelIndex(panelIndex);
-                    parentPanelControl.swapPanels(previous, panelIndex);
-                }
-                e.consume();
+            if (parentPanelControl.getCurrentlyDraggedPanelIndex() != panelIndex) {
+                // Apparently the dragboard can't be updated while
+                // the drag is in progress. This is why we use an
+                // external source for updates.
+                assert parentPanelControl.getCurrentlyDraggedPanelIndex() != -1;
+                int previous = parentPanelControl.getCurrentlyDraggedPanelIndex();
+                parentPanelControl.setCurrentlyDraggedPanelIndex(panelIndex);
+                parentPanelControl.swapPanels(previous, panelIndex);
             }
-        );
+            e.consume();
+        });
 
         dropNode.setOnDragExited(e -> {
             dropNode.getStyleClass().remove("dragged-over");
@@ -190,7 +168,8 @@ public abstract class FilterPanel extends AbstractPanel {
 
     /**
      * Appends panel index to panel name if a panel is unnamed.
-     * This allows user to identify each panel with a unique name 
+     * This allows user to identify each panel with a unique name
+     *
      * @param panelName
      * @return final panel name shown to users
      */
@@ -228,9 +207,18 @@ public abstract class FilterPanel extends AbstractPanel {
 
     protected abstract void stopLoadingAnimationIfApplicable(AppliedFilterEvent e);
 
+    private void handleFilterWarning(FilterWarningEvent e) {
+        if (!e.filterExpr.equals(getCurrentFilterExpression())) return;
+        showWarning(e.warnings.get(0));
+    }
+
     private void handleFilterException(FilterExceptionEvent e) {
         if (!e.filterExpr.equals(getCurrentFilterExpression())) return;
         emptyFilterAndShowError(e.exceptionMessage);
+    }
+
+    private void showWarning(String warning) {
+        UI.status.displayMessage(getUniquePanelName(panelMenuBar.getPanelName()) + ": " + warning);
     }
 
     private void emptyFilterAndShowError(String exceptionMessage) {
@@ -246,20 +234,20 @@ public abstract class FilterPanel extends AbstractPanel {
     public FilterExpression getCurrentFilterExpression() {
         return currentFilterExpression;
     }
-    
+
     public void restorePanel(String name, String filterString) {
         filterTextField.setFilterText(filterString);
         panelMenuBar.setPanelName(name);
     }
 
-    public void startRename(){
+    public void startRename() {
         panelMenuBar.initRenameableTextFieldAndEvents();
     }
 
     public void setPanelName(String newName) {
         panelMenuBar.setPanelName(newName);
     }
-    
+
     public PanelInfo getCurrentInfo() {
         return new PanelInfo(this.panelMenuBar.getPanelName(), filterTextField.getText());
     }
@@ -291,10 +279,5 @@ public abstract class FilterPanel extends AbstractPanel {
     public void updatePanel(List<GuiElement> filteredAndSortedElements) {
         setElementsList(filteredAndSortedElements);
         refreshItems();
-    }
-
-    @Override
-    public void close() {
-        ui.unregisterEvent(onModelUpdate);
     }
 }

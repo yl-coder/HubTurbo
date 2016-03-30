@@ -59,7 +59,7 @@ public class ChromeDriverTest extends UITest {
         assertEquals(GitHubURL.getPathForNewMilestone("dummy/dummy"), url);
         clearUrl();
 
-        click("#dummy/dummy_col0_9");
+        clickIssue(0, 9);
         sleep(EVENT_DELAY);
         clearUrl();
 
@@ -137,12 +137,6 @@ public class ChromeDriverTest extends UITest {
         push(KeyCode.A);
         sleep(EVENT_DELAY);
         assertEquals("a", keyCode);
-        clearKeyCode();
-
-        // manage milestone
-        push(KeyCode.M);
-        sleep(EVENT_DELAY);
-        assertEquals("m", keyCode);
         clearKeyCode();
 
         // jump to comments
