@@ -30,7 +30,7 @@ public class NoPanelAtQuitTest extends UITest {
         click(panelCloseButtonId);
 
         // Quitting to update json
-        click("File");
+        click("App");
         click("Quit");
 
         Preferences testPref = TestController.loadTestPreferences();

@@ -128,7 +128,7 @@ public class UseSessionConfigsTest extends UITest {
         click("OK");
 
         // Then exit program...
-        click("File");
+        click("App");
         click("Quit");
 
         // ...and check if the test JSON is still there...

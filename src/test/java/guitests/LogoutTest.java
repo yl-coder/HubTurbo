@@ -34,7 +34,7 @@ public class LogoutTest extends UITest {
         click("Sign in");
         sleep(2000);
 
-        click("File");
+        click("App");
         click("Logout");
 
         // checking that the json file exists and the saved credentials have been emptied

@@ -370,7 +370,7 @@ public class UITest extends GuiTest {
      * Performs logout from File -> Logout on HubTurbo's pView.
      */
     public void logout() {
-        clickMenu("File", "Logout");
+        clickMenu("App", "Logout");
     }
 
     /**
