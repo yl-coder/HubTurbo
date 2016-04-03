@@ -25,7 +25,13 @@ public class GUIController {
     private final PanelControl panelControl;
     private final UI ui;
     private final Label apiBox;
+
+    private int previousRemainingApiRequests = 0; //To store the previous amount of the available remaining API request.
+    private int lastNumberOfApiCallsUsed = 0; // To store the previous amount of api calls used.
+
     private String defaultRepoId;
+
+    int refreshTimeInMins = 1;
 
     public GUIController(UI ui, PanelControl panelControl, Label apiBox) {
         this.ui = ui;
@@ -41,7 +47,7 @@ public class GUIController {
 
     public final void registerEvents() {
         UI.events.registerEvent((ModelUpdatedEventHandler) this::modelUpdated);
-        UI.events.registerEvent((UpdateRateLimitsEventHandler) this::updateAPIBox);
+        UI.events.registerEvent((UpdateRateLimitsEventHandler) this::updateRateLimitsEvent);
         UI.events.registerEvent((ShowErrorDialogEventHandler) this::showErrorDialog);
         UI.events.registerEvent((PrimaryRepoChangedEventHandler) this::setDefaultRepo);
     }
@@ -102,12 +108,29 @@ public class GUIController {
                 .collect(Collectors.toList());
     }
 
-    private void updateAPIBox(UpdateRateLimitsEvent e) {
-        Platform.runLater(() -> apiBox.setText(String.format("%s/%s",
-                                                             e.remainingRequests,
-                                                             Utility.minutesFromNow(e.nextRefreshInMillisecs)))
-        );
+
+
+    private void updateRateLimitsEvent(UpdateRateLimitsEvent e){
+        updateSyncRefreshRate(e);
+        updateAPIBox(e);
     }
+
+    private void updateSyncRefreshRate(UpdateRateLimitsEvent e) {
+        int difference = previousRemainingApiRequests - e.remainingRequests;
+
+        if (difference >= 0) {
+            lastNumberOfApiCallsUsed = difference;
+        }
+        previousRemainingApiRequests = e.remainingRequests;
+        refreshTimeInMins = ui.timerManager.updateTickerTimer(e.remainingRequests,
+                Utility.minutesFromNow(e.nextRefreshInMillisecs), lastNumberOfApiCallsUsed);
+}
+
+    private void updateAPIBox(UpdateRateLimitsEvent e) {
+        Platform.runLater(() -> apiBox.setText(String.format("%s/%s[x%d]",
+                    e.remainingRequests, Utility.minutesFromNow(e.nextRefreshInMillisecs), (int) Math.ceil(refreshTimeInMins))));
+    }
+
 
     private void showErrorDialog(ShowErrorDialogEvent e) {
         Platform.runLater(() -> DialogMessage.showErrorDialog(e.header, e.message));

@@ -73,8 +73,6 @@ public class UpdateController {
                             .thenAccept(results -> logger.info("Metadata retrieval successful for "
                                     + results.stream().filter(result -> result).count()
                                     + "/" + results.size() + " repos"))
-                            .thenCompose(n -> logic.getRateLimitResetTime())
-                            .thenApply(logic::updateRemainingRate)
                             .thenRun(() -> logic.updateUI(processFilters(filterExprs))); // Then filter the second time.
                 });
     }

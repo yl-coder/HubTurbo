@@ -13,6 +13,8 @@ import static org.junit.Assert.fail;
 
 public class TickingTimerTests {
 
+    boolean tickingTimerStatus = false;
+
     private static void delay(double seconds) {
         int time = (int) (seconds * 1000);
         try {
@@ -84,6 +86,60 @@ public class TickingTimerTests {
             if (ticks.get(i) != ideal.get(i)) {
                 fail();
             }
+        }
+    }
+
+
+    //This method is to test the changePeriod method in TickingTimer class. The changePeriod method is called 0.1sec
+    //before timeout.
+    @Test
+    public void changePeriodTest() {
+        final ArrayList<Integer> ticks = new ArrayList<>();
+
+        final TickingTimer tickingTimer = new TickingTimer("test3", 5,
+                (Integer i) -> {}, () -> {
+            tickingTimerStatus = true;
+            ticks.clear();
+        }, TimeUnit.SECONDS);
+
+        tickingTimer.start();
+
+        delay(3.9); //TickingTimer initial timeout is 1 sec less.
+
+        if (tickingTimerStatus == false) {
+            tickingTimer.changePeriod(3);
+        } else {
+            fail();
+        }
+
+        delay(1.5);
+
+        //At t=1.5s, timeout should not be called yet.
+        if (tickingTimerStatus == true) {
+            fail();
+        }
+
+        delay(1.6);
+        //At t=3.1s, timeout should be called already.
+        if (tickingTimerStatus == false) {
+            fail();
+        } else {
+            tickingTimerStatus = false; //Reset the flag.
+        }
+
+        //Second iteration after calling changePeriod method.
+        delay(2);
+
+        //At t=2.1s, timeout should not be called yet.
+        if (tickingTimerStatus == true) {
+            fail();
+        }
+
+        delay(1.5);
+
+        //At t=3.6s, timeout should be called already.
+        if (tickingTimerStatus == false) {
+            fail();
         }
     }
 }

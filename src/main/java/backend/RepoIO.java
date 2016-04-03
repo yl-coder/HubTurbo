@@ -198,7 +198,7 @@ public class RepoIO {
                         }
                         UI.events.triggerEvent(new UpdateProgressEvent(model.getRepoId()));
                         return newModel;
-                    }
+                    } 
                 }).exceptionally(withResult(new Model(model.getRepoId())));
     }
 

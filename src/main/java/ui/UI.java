@@ -47,7 +47,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static ui.components.KeyboardShortcuts.SHOW_ISSUE_PICKER;
-import static ui.components.KeyboardShortcuts.SHOW_REPO_PICKER;
+
+
 
 public class UI extends Application implements EventDispatcher {
 
@@ -56,6 +57,7 @@ public class UI extends Application implements EventDispatcher {
     public static final int VERSION_PATCH = 0;
 
     private static final Logger logger = LogManager.getLogger(UI.class.getName());
+    public static final int APIQUOTA_BUFFER = 200;
     private static HWND mainWindowHandle;
     private final GlobalHotkey globalHotkey = new GlobalHotkey(this);
 
@@ -92,10 +94,10 @@ public class UI extends Application implements EventDispatcher {
     public static StatusUI status;
     public static EventDispatcher events;
     public EventBus eventBus;
-    private TickingTimer refreshTimer;
     public GUIController guiController;
     private NotificationController notificationController;
     public UndoController undoController;
+    public TickingTimerManager timerManager;
 
 
     // Main UI elements
@@ -239,11 +241,17 @@ public class UI extends Application implements EventDispatcher {
     private void initApplicationState() {
         // In the future, when more arguments are passed to logic,
         // we can pass them in the form of an array.
+
         logic = new Logic(uiManager, prefs, Optional.empty(), Optional.empty());
+
         // TODO clear cache if necessary
-        refreshTimer = new TickingTimer("Refresh Timer", REFRESH_PERIOD,
-                                        status::updateTimeToRefresh, logic::refresh, TimeUnit.SECONDS);
-        refreshTimer.start();
+
+        TickingTimer refreshTimer = new TickingTimer("Refresh Timer", REFRESH_PERIOD,
+            status::updateTimeToRefresh, logic::refresh, TimeUnit.SECONDS);
+
+        timerManager = new TickingTimerManager(refreshTimer);
+        timerManager.startTimer();
+
         undoController = new UndoController(notificationController);
     }
 
@@ -257,6 +265,7 @@ public class UI extends Application implements EventDispatcher {
 
         panels = new PanelControl(this, mainStage, prefs);
         guiController = new GUIController(this, panels, apiBox);
+
 
         Scene scene = new Scene(createRootNode());
 
@@ -349,7 +358,7 @@ public class UI extends Application implements EventDispatcher {
                     if (shouldRefresh) {
                         logger.info("Browser view has changed; refreshing");
                         logic.refresh();
-                        refreshTimer.restart();
+                        timerManager.restartTimer();
                     }
                 }
             });
@@ -602,5 +611,23 @@ public class UI extends Application implements EventDispatcher {
     private void showJavaRuntimeVersionNotCompatible(String javaRuntimeVersionString) {
         String message = String.format(ERROR_MSG_JAVA_RUNTIME_VERSION_PARSING, javaRuntimeVersionString);
         DialogMessage.showInformationDialog("Java version unknown", message);
+    }
+
+     /* This function updates the TickerTimer period, which is used to periodically refresh the issues.
+     * @param apiQuota
+     */
+    public void updateTickerTimer(int apiQuota){
+
+        if(apiQuota < 4000){
+            refreshTimer.pause();
+            refreshTimer.setPeriod((int)((5000 - apiQuota)/1000.0f * REFRESH_PERIOD));
+            refreshTimer.restart();
+            refreshTimer.resume();
+            System.out.println("Refresh rate set to " + (int)((6000 - apiQuota)/1000.0f * REFRESH_PERIOD));
+        }
+        else{
+            refreshTimer.setPeriod(REFRESH_PERIOD);
+        }
+
     }
 }
