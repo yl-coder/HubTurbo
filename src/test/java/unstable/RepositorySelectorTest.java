@@ -120,7 +120,7 @@ public class RepositorySelectorTest extends UITest {
         assertEquals(3, comboBox.getItems().size());
 
         // exit program
-        traverseMenu("File", "Quit");
+        traverseMenu("App", "Quit");
         push(KeyCode.ENTER);
 
         // testing that the correct repo was saved in the json
