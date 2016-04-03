@@ -612,22 +612,4 @@ public class UI extends Application implements EventDispatcher {
         String message = String.format(ERROR_MSG_JAVA_RUNTIME_VERSION_PARSING, javaRuntimeVersionString);
         DialogMessage.showInformationDialog("Java version unknown", message);
     }
-
-     /* This function updates the TickerTimer period, which is used to periodically refresh the issues.
-     * @param apiQuota
-     */
-    public void updateTickerTimer(int apiQuota){
-
-        if(apiQuota < 4000){
-            refreshTimer.pause();
-            refreshTimer.setPeriod((int)((5000 - apiQuota)/1000.0f * REFRESH_PERIOD));
-            refreshTimer.restart();
-            refreshTimer.resume();
-            System.out.println("Refresh rate set to " + (int)((6000 - apiQuota)/1000.0f * REFRESH_PERIOD));
-        }
-        else{
-            refreshTimer.setPeriod(REFRESH_PERIOD);
-        }
-
-    }
 }
